@@ -1,56 +1,97 @@
-
-import React from 'react';
-
-//import ShowcaseButton from '../showcase-components/showcase-button';
+import React, { Component } from 'react';
+import './App.css';
+import '../node_modules/react-vis/dist/style.css';
 import {
   XYPlot,
   XAxis,
   YAxis,
-  VerticalGridLines,
+  ChartLabel,
   HorizontalGridLines,
-  MarkSeries
+  VerticalGridLines,
+  LineSeries,
+  Crosshair,
+  MarkSeries,
+  Hint
 } from 'react-vis';
 
-function generateData() {
-  return [...new Array(10)].map(row => ({
-    x: Math.random() * 5,
-    y: Math.random() * 10
-  }));
-}
+const CHART_MARGINS = {left: 50, right: 10, top: 10, bottom: 25};
+const DATA2 = [{x: 1, y: 5}, {x: 2, y: 10}, {x: 3, y: 10}, {x: 4, y: 15}];
+const YMAX = 15;
 
-const MODE = ['noWobble'];
+const DATA = [
+  [
+    {x: 1, y: 10},
+    {x: 2, y: 7},
+    {x: 3, y: 15}
+  ],
+  [
+    {x: 1, y: 20},
+    {x: 2, y: 5},
+    {x: 3, y: 15}
+  ]
+];
 
-export default class Example extends React.Component {
-  state = {
-    data: generateData(),
-    modeIndex: 0
+class App extends Component {
+
+  _rememberValue = value => {
+    this.setState({value});
   };
 
-  updateModeIndex = increment => () => {
-    const newIndex = this.state.modeIndex + (increment ? 1 : -1);
-    const modeIndex =
-      newIndex < 0 ? MODE.length - 1 : newIndex >= MODE.length ? 0 : newIndex;
-    this.setState({
-      modeIndex
-    });
-  };
-
+  constructor(props) {
+    super(props);
+    this.state = {
+      crosshairValues: []
+    };
+    
+  }
+  
   render() {
-    const {modeIndex, data} = this.state;
+    const {value} = this.state;
     return (
-      <div className="centered-and-flexed">
-        <XYPlot width={300} height={300}>
+      <div className="App">
+
+        <XYPlot
+          onMouseLeave={() => this.setState({crosshairValues: []})}
+          width={300}
+          height={300}>
           <VerticalGridLines />
           <HorizontalGridLines />
           <XAxis />
           <YAxis />
-          <MarkSeries animation={MODE[modeIndex]} data={data} />
+          <LineSeries
+            onNearestX={(value, {index}) =>
+                this.setState({crosshairValues: DATA.map(d => d[index])})}
+            data={DATA[0]}/>
+          <LineSeries
+            data={DATA[1]}/>
+          <Crosshair values={this.state.crosshairValues}/>
         </XYPlot>
-        <button
-          onClick={() => this.setState({data: generateData()})}
-          buttonContent={'UPDATE DATA'}
-        />
+
+        <XYPlot width={300} height={300} margin={CHART_MARGINS}>
+        <VerticalGridLines />
+        <HorizontalGridLines />
+        <XAxis />
+        <YAxis />
+        <MarkSeries onNearestX={this._rememberValue} data={DATA2} />
+        {value ? (
+          <LineSeries
+            data={[{x: value.x, y: value.y}, {x: value.x, y: YMAX}]}
+            stroke="black"
+          />
+        ) : null}
+        {value ? (
+          <Hint
+            value={value}
+            align={{horizontal: Hint.ALIGN.AUTO, vertical: Hint.ALIGN.TOP_EDGE}}
+          >
+            <div className="rv-hint__content">{`(${value.x}, ${value.y})`}</div>
+          </Hint>
+        ) : null}
+      </XYPlot>
+
       </div>
     );
   }
 }
+
+export default App;
